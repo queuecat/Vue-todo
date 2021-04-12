@@ -9,7 +9,8 @@ export default new Vuex.Store({
     list: [],
     // 文本框内容
     inputValue: '',
-    nextId: 5
+    nextId: 5,
+    key: 'all'
   },
   mutations: {
     initList(state, list) {
@@ -33,6 +34,18 @@ export default new Vuex.Store({
       if (index !== -1) {
         state.list.splice(index, 1)
       }
+    },
+    doneChenge(state, params) {
+      const index = state.list.findIndex(x => x.id === params.id)
+      if (index !== -1) {
+        state.list[index].done = params.status
+      }
+    },
+    clean(state) {
+      state.list = state.list.filter(x => x.done === false)
+    },
+    changeList(state, key) {
+      state.key = key
     }
   },
   actions: {
@@ -40,6 +53,22 @@ export default new Vuex.Store({
       axios.get('/list.json').then(({ data }) => {
         context.commit('initList', data)
       })
+    }
+  },
+  getters: {
+    unDoneLength(state) {
+      return state.list.filter(x => x.done === false).length
+    },
+    infoList(state) {
+      if (state.key === 'all') {
+        return state.list
+      }
+      if (state.key === 'undone') {
+        return state.list.filter(x => !x.done)
+      }
+      if (state.key === 'done') {
+        return state.list.filter(x => x.done)
+      }
     }
   },
   modules: {}

@@ -8,7 +8,7 @@
     />
     <a-button @click="addListItem" type="primary">添加事项</a-button>
 
-    <a-list bordered :dataSource="list" class="dt_list">
+    <a-list bordered :dataSource="infoList" class="dt_list">
       <a-list-item slot="renderItem" slot-scope="item">
         <!-- 复选框 -->
         <a-checkbox
@@ -27,22 +27,34 @@
       <!-- footer区域 -->
       <div slot="footer" class="footer">
         <!-- 未完成的任务个数 -->
-        <span>0条剩余</span>
+        <span>{{ unDoneLength }}条剩余</span>
         <!-- 操作按钮 -->
         <a-button-group>
-          <a-button type="primary">全部</a-button>
-          <a-button>未完成</a-button>
-          <a-button>已完成</a-button>
+          <a-button
+            @click="changeList('all')"
+            :type="key === 'all' ? 'primary' : 'default'"
+            >全部</a-button
+          >
+          <a-button
+            @click="changeList('undone')"
+            :type="key === 'undone' ? 'primary' : 'default'"
+            >未完成</a-button
+          >
+          <a-button
+            @click="changeList('done')"
+            :type="key === 'done' ? 'primary' : 'default'"
+            >已完成</a-button
+          >
         </a-button-group>
         <!-- 把已经完成的任务清空 -->
-        <a>清除已完成</a>
+        <a @click="clean">清除已完成</a>
       </div>
     </a-list>
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 export default {
   name: 'app',
   data() {
@@ -55,7 +67,8 @@ export default {
     // list() {
     //   return this.$store.state.list
     // }
-    ...mapState(['list', 'inputValue'])
+    ...mapState(['inputValue', 'key']),
+    ...mapGetters(['unDoneLength', 'infoList'])
   },
   methods: {
     handleInputChange(data) {
@@ -70,7 +83,15 @@ export default {
     removeById(id) {
       this.$store.commit('removeItem', id)
     },
-    doneChenge(e) {}
+    doneChenge(e, id) {
+      this.$store.commit('doneChenge', { id, status: e.target.checked })
+    },
+    clean() {
+      this.$store.commit('clean')
+    },
+    changeList(key) {
+      this.$store.commit('changeList', key)
+    }
   }
 }
 </script>
