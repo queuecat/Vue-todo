@@ -1,14 +1,27 @@
 <template>
   <div id="app">
-    <a-input placeholder="请输入任务" class="my_ipt" />
-    <a-button type="primary">添加事项</a-button>
+    <a-input
+      :value="inputValue"
+      @change="handleInputChange"
+      placeholder="请输入任务"
+      class="my_ipt"
+    />
+    <a-button @click="addListItem" type="primary">添加事项</a-button>
 
     <a-list bordered :dataSource="list" class="dt_list">
       <a-list-item slot="renderItem" slot-scope="item">
         <!-- 复选框 -->
-        <a-checkbox>{{ item.info }}</a-checkbox>
+        <a-checkbox
+          @change="
+            e => {
+              doneChenge(e, item.id)
+            }
+          "
+          :checked="item.done"
+          >{{ item.info }}</a-checkbox
+        >
         <!-- 删除链接 -->
-        <a slot="actions">删除</a>
+        <a slot="actions" @click="removeById(item.id)">删除</a>
       </a-list-item>
 
       <!-- footer区域 -->
@@ -29,26 +42,35 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 export default {
   name: 'app',
-  data () {
-    return {
-      list: [
-        {
-          id: 0,
-          info: 'Racing car sprays burning fuel into crowd.',
-          done: false
-        },
-        { id: 1, info: 'Japanese princess to wed commoner.', done: false },
-        {
-          id: 2,
-          info: 'Australian walks 100km after outback crash.',
-          done: false
-        },
-        { id: 3, info: 'Man charged over missing wedding girl.', done: false },
-        { id: 4, info: 'Los Angeles battles huge wildfires.', done: false }
-      ]
-    }
+  data() {
+    return {}
+  },
+  created() {
+    this.$store.dispatch('getList')
+  },
+  computed: {
+    // list() {
+    //   return this.$store.state.list
+    // }
+    ...mapState(['list', 'inputValue'])
+  },
+  methods: {
+    handleInputChange(data) {
+      this.$store.commit('setInputValue', data.target.value)
+    },
+    addListItem() {
+      if (this.inputValue.trim().length <= 0) {
+        return this.$message.warning('文本框不能为空')
+      }
+      this.$store.commit('addList')
+    },
+    removeById(id) {
+      this.$store.commit('removeItem', id)
+    },
+    doneChenge(e) {}
   }
 }
 </script>
