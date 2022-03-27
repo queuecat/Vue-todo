@@ -21,53 +21,53 @@ export default new Vuex.Store({
     },
     addList(state) {
       const obj = {
-        id: state.nextId,
-        info: state.inputValue,
-        done: false
+        _id: state.nextId,
+        title: state.inputValue,
+        completed: false
       }
       state.list.push(obj)
       state.nextId++
       state.inputValue = ''
     },
     removeItem(state, id) {
-      const index = state.list.findIndex(x => x.id === id)
+      const index = state.list.findIndex(x => x._id === id)
       if (index !== -1) {
         state.list.splice(index, 1)
       }
     },
     doneChenge(state, params) {
-      const index = state.list.findIndex(x => x.id === params.id)
+      const index = state.list.findIndex(x => x._id === params._id)
       if (index !== -1) {
-        state.list[index].done = params.status
+        state.list[index].completed = params.status
       }
     },
     clean(state) {
-      state.list = state.list.filter(x => x.done === false)
+      state.list = state.list.filter(x => x.completed === false)
     },
     changeList(state, key) {
       state.key = key
     }
   },
   actions: {
-    getList(context) {
-      axios.get('/list.json').then(({ data }) => {
+    async getList(context) {
+      await axios.get('/list.json').then(({ data }) => {
         context.commit('initList', data)
       })
     }
   },
   getters: {
     unDoneLength(state) {
-      return state.list.filter(x => x.done === false).length
+      return state.list.filter(x => x.completed === false).length
     },
     infoList(state) {
       if (state.key === 'all') {
         return state.list
       }
       if (state.key === 'undone') {
-        return state.list.filter(x => !x.done)
+        return state.list.filter(x => !x.completed)
       }
       if (state.key === 'done') {
-        return state.list.filter(x => x.done)
+        return state.list.filter(x => x.completed)
       }
     }
   },

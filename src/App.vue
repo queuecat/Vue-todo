@@ -1,8 +1,7 @@
 <template>
   <div id="app">
     <a-input
-      :value="inputValue"
-      @change="handleInputChange"
+      v-model="inputValue"
       placeholder="请输入任务"
       class="my_ipt"
     />
@@ -14,83 +13,171 @@
         <a-checkbox
           @change="
             e => {
-              doneChenge(e, item.id)
+              doneChenge(e, item._id)
             }
           "
-          :checked="item.done"
-          >{{ item.info }}</a-checkbox
+          :checked="item.completed"
+          >{{ item.title }}</a-checkbox
         >
         <!-- 删除链接 -->
-        <a slot="actions" @click="removeById(item.id)">删除</a>
+        <a slot="actions" @click="removeById(item._id)">删除</a>
       </a-list-item>
 
       <!-- footer区域 -->
       <div slot="footer" class="footer">
         <!-- 未完成的任务个数 -->
-        <span>{{ unDoneLength }}条剩余</span>
+        <span>未完成任务 {{ unDoneLength }} 条</span>
         <!-- 操作按钮 -->
         <a-button-group>
           <a-button
             @click="changeList('all')"
-            :type="key === 'all' ? 'primary' : 'default'"
+            :type="active === 'all' ? 'primary' : 'default'"
             >全部</a-button
           >
           <a-button
             @click="changeList('undone')"
-            :type="key === 'undone' ? 'primary' : 'default'"
+            :type="active === 'undone' ? 'primary' : 'default'"
             >未完成</a-button
           >
           <a-button
             @click="changeList('done')"
-            :type="key === 'done' ? 'primary' : 'default'"
+            :type="active === 'done' ? 'primary' : 'default'"
             >已完成</a-button
           >
         </a-button-group>
         <!-- 把已经完成的任务清空 -->
-        <a @click="clean">清除已完成</a>
+        <a @click="clean">清除已完成任务</a>
       </div>
     </a-list>
   </div>
 </template>
 
 <script>
-import { mapState, mapGetters } from 'vuex'
+// import { mapState, mapGetters } from 'vuex'
+import { getTaskList, deleteById, doneChenge, addTask, clearTask } from './api/todo'
+
 export default {
   name: 'app',
   data() {
-    return {}
+    return {
+      taskList: [],
+      inputValue: '',
+      active: 'all',
+      isLow: false,
+      isFirst: true
+    }
   },
   created() {
-    this.$store.dispatch('getList')
+    this.getList()
   },
   computed: {
-    // list() {
-    //   return this.$store.state.list
-    // }
-    ...mapState(['inputValue', 'key']),
-    ...mapGetters(['unDoneLength', 'infoList'])
+    // ...mapGetters(['unDoneLength', 'infoList'])
+    unDoneLength() {
+      return this.taskList.filter(x => x.completed === false).length
+    },
+    infoList() {
+      if (this.active === 'all') {
+        return this.taskList
+      }
+      if (this.active === 'undone') {
+        return this.taskList.filter(x => !x.completed)
+      }
+      if (this.active === 'done') {
+        return this.taskList.filter(x => x.completed)
+      }
+      return this.taskList
+    }
   },
   methods: {
-    handleInputChange(data) {
-      this.$store.commit('setInputValue', data.target.value)
+    getList() {
+      getTaskList({}).then(data => {
+        this.taskList = data
+      }).catch(err => {
+        if (this.isFirst) {
+          this.isLow = true
+          // 走降级逻辑
+          this.$store.dispatch('getList')
+        }
+        this.$message.error('列表获取失败：' + err.message)
+      }).finally(async () => {
+        this.isFirst = false
+        // 走降级逻辑
+        if (this.isLow) {
+          await this.$store.dispatch('getList')
+          this.taskList = this.$store.state.list
+          this.$message.success('启动Vuex降级处理')
+        }
+      })
     },
     addListItem() {
       if (this.inputValue.trim().length <= 0) {
         return this.$message.warning('文本框不能为空')
       }
-      this.$store.commit('addList')
+      // 降级
+      if (this.isLow) {
+        this.$store.commit('addList')
+        this.inputValue = ''
+        return
+      }
+      addTask({ title: this.inputValue }).then(data => {
+        this.$message.success('新增成功')
+        this.inputValue = ''
+        this.getList()
+      }).catch(err => {
+        this.$message.error('新增失败:' + err.message)
+      })
     },
-    removeById(id) {
-      this.$store.commit('removeItem', id)
+    // 删除单个
+    removeById(_id) {
+      // 降级
+      if (this.isLow) {
+        this.$store.commit('removeItem', _id)
+        return
+      }
+
+      deleteById({ _id }).then(data => {
+        this.$message.success('删除成功')
+        this.getList()
+      }).catch(err => {
+        this.$message.error('删除失败:' + err.message)
+      })
     },
-    doneChenge(e, id) {
-      this.$store.commit('doneChenge', { id, status: e.target.checked })
+    // 完成状态切换
+    doneChenge(e, _id) {
+      // 降级
+      if (this.isLow) {
+        this.$store.commit('doneChenge', { _id, status: e.target.checked })
+        return
+      }
+      doneChenge({ _id, completed: e.target.checked }).then(data => {
+        this.getList()
+      }).catch(err => {
+        this.$message.error('状态切换失败:' + err.message)
+      })
     },
+    // 删除所有已完成
     clean() {
-      this.$store.commit('clean')
+      // 降级
+      if (this.isLow) {
+        this.$store.commit('clean')
+        this.taskList = this.$store.state.list
+        return
+      }
+      clearTask().then(data => {
+        this.$message.success('清理成功')
+        this.getList()
+      }).catch(err => {
+        this.$message.error('清理失败:' + err.message)
+      })
     },
-    changeList(key) {
-      this.$store.commit('changeList', key)
+    // tab按钮切换
+    changeList(active) {
+      this.active = active
+    }
+  },
+  watch: {
+    inputValue(val) {
+      this.$store.commit('setInputValue', val)
     }
   }
 }
@@ -98,7 +185,9 @@ export default {
 
 <style scoped>
 #app {
+  width: fit-content;
   padding: 10px;
+  margin: 0 auto;
 }
 
 .my_ipt {

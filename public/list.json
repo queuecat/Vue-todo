@@ -1,15 +1,27 @@
 [
   {
-    "id": 0,
-    "info": "Racing car sprays burning fuel into crowd.",
-    "done": true
+    "_id": 0,
+    "title": "Racing car sprays burning fuel into crowd.",
+    "completed": true
   },
-  { "id": 1, "info": "Japanese princess to wed commoner.", "done": false },
   {
-    "id": 2,
-    "info": "Australian walks 100km after outback crash.",
-    "done": false
+    "_id": 1,
+    "title": "Japanese princess to wed commoner.",
+    "completed": false
   },
-  { "id": 3, "info": "Man charged over missing wedding girl.", "done": true },
-  { "id": 4, "info": "Los Angeles battles huge wildfires.", "done": false }
+  {
+    "_id": 2,
+    "title": "Australian walks 100km after outback crash.",
+    "completed": false
+  },
+  {
+    "_id": 3,
+    "title": "Man charged over missing wedding girl.",
+    "completed": true
+  },
+  {
+    "_id": 4,
+    "title": "Los Angeles battles huge wildfires.",
+    "completed": false
+  }
 ]
